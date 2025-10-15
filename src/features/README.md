@@ -1,0 +1,1 @@
+This repository builds on the Diff3F (https://github.com/niladridutt/Diffusion-3D-Features) and SD-DINO (https://github.com/Junyi42/sd-dino) projects.

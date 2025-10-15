@@ -1,0 +1,93 @@
+save_root: ./demo_output
+device: cuda
+
+log:
+  wandb: false
+  wandb_group: 
+  render_every: 1
+  params_every: -1
+  print_every: -1
+  mesh_last: true
+
+early_stop:
+  enabled: true
+  no_change_patience: 20
+  no_change_tol: 1e-6
+
+data:
+  inp_root: #assets/demo/example
+  shape_collection_path: ${shape_prior.exp_dir}/shape_collection.h5
+  
+
+shape_prior:
+  category: chair
+  exp_dir: pretrained/chairs_dit
+  checkpoint: latest
+  resolution: 32
+  flexi_scale: [1., 1.6, 1.]
+  final_res: 256
+
+renderer: 
+  backend: cuda # cuda or opengl
+
+pose:
+  matching: cosine_argmax
+  refine: false
+  n_components: 2368 # -1 for no PCA, else number of PCA components for feature embedding before PnP
+  ransac_pnp:
+    iterationsCount: 50000
+    reprojectionError: 1.0
+    confidence: 0.99
+
+init_stage:
+  max_iters: 500
+  vars:
+    rotation:
+      lr: 5.e-3
+      lr_min: 1.e-4
+      T_max: ${init_stage.max_iters}
+    translation:
+      lr: 5.e-3
+      lr_min: 1.e-4
+      T_max: ${init_stage.max_iters}
+    scale:
+      lr: 5.e-4
+      lr_min: 1.e-5
+      T_max: ${init_stage.max_iters}
+
+shape_stage:
+  max_iters: 1000
+  optim: adam
+  vars:
+    rotation:
+      lr: 5.e-4
+      lr_min: 1.e-5
+      T_max: ${shape_stage.max_iters}
+    translation:
+      lr: 5.e-4
+      lr_min: 1.e-5
+      T_max: ${shape_stage.max_iters}
+    scale:
+      init_val: [1, 1, 1]
+      lr: 5.e-4
+      lr_min: 1.e-5
+      T_max: ${shape_stage.max_iters}
+    latent:
+      lr: 1.e-4
+      lr_min: 1.e-5
+      T_max: ${shape_stage.max_iters}
+  loss_cfg:
+    part_based: true
+    # * "Part-weighted" 2D losses
+    part_depth: 1.e+1
+    part_mask: 1.e-4
+    part_normals: 1.e-4
+    # * 3D regularization losses
+    cd_canon_reg: 1.e+2
+    cycle_consistency: 1.e+2
+    # * "Regular" 2D losses
+    depth: 1.e+0
+    mask: 1.e-3
+    l2_normals: 5.e-4
+    mask_iou: 5.e+1
+    dist: 1.e+2
